@@ -214,9 +214,9 @@ def build_unscored_orders_frame(sb: Client, unscored_ids: list[int]) -> pd.DataF
 def wrangle_for_scoring(dfin: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     """Match training notebook: engineer features, return X and order_id index."""
     out = dfin.copy()
-    out["order_datetime"] = pd.to_datetime(out["order_datetime"])
-    out["birthdate"] = pd.to_datetime(out["birthdate"], errors="coerce")
-    out["customer_created_at"] = pd.to_datetime(out["customer_created_at"])
+    out["order_datetime"] = pd.to_datetime(out["order_datetime"], format='ISO8601', utc=True)
+    out["birthdate"] = pd.to_datetime(out["birthdate"], errors="coerce", utc=True)
+    out["customer_created_at"] = pd.to_datetime(out["customer_created_at"], utc=True)
     out["account_tenure_days"] = (out["order_datetime"] - out["customer_created_at"]).dt.days
     out["age_at_order"] = (out["order_datetime"] - out["birthdate"]).dt.days / 365.25
     out["delivery_delay_days"] = out["actual_days"] - out["promised_days"]
@@ -262,7 +262,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Fraud scoring API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "https://intext-test-app.vercel.app/select-customer"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
